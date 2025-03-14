@@ -52,7 +52,7 @@ class MessageController
             }
             
             // Check if user exists
-            $user = User::find($data['user_id']);
+            $user = $this->capsule->table('users')->where('id', $data['user_id'])->first();
             if (!$user) {
                 debug_log('User not found', $data['user_id']);
                 $response->getBody()->write(json_encode([
@@ -132,6 +132,28 @@ class MessageController
         try {
             $groupId = $args['id'];
             
+            // Get the user ID from the request (query parameter)
+            $queryParams = $request->getQueryParams();
+            $userId = $queryParams['user_id'] ?? null;
+            
+            if (!$userId) {
+                debug_log('User ID is required as a query parameter');
+                $response->getBody()->write(json_encode([
+                    'error' => 'User ID is required as a query parameter'
+                ]));
+                return $response->withStatus(400)->withHeader('Content-Type', 'application/json');
+            }
+            
+            // Check if user exists
+            $user = $this->capsule->table('users')->where('id', $userId)->first();
+            if (!$user) {
+                debug_log('User not found', $userId);
+                $response->getBody()->write(json_encode([
+                    'error' => 'User not found'
+                ]));
+                return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+            
             // Check if group exists
             $group = Group::find($groupId);
             if (!$group) {
@@ -140,6 +162,23 @@ class MessageController
                     'error' => 'Group not found'
                 ]));
                 return $response->withStatus(404)->withHeader('Content-Type', 'application/json');
+            }
+            
+            // Check if user is a member of the group
+            $isMember = $this->capsule->table('group_members')
+                ->where('user_id', $userId)
+                ->where('group_id', $groupId)
+                ->exists();
+                
+            if (!$isMember) {
+                debug_log('User is not a member of the group', [
+                    'user_id' => $userId, 
+                    'group_id' => $groupId
+                ]);
+                $response->getBody()->write(json_encode([
+                    'error' => 'Access denied. Only group members can view messages.'
+                ]));
+                return $response->withStatus(403)->withHeader('Content-Type', 'application/json');
             }
             
             // Get all messages from the group
@@ -153,14 +192,14 @@ class MessageController
             // Add user info to each message
             $formattedMessages = [];
             foreach ($messages as $message) {
-                $user = User::find($message->user_id);
+                $messageUser = $this->capsule->table('users')->where('id', $message->user_id)->first();
                 $formattedMessages[] = [
                     'id' => $message->id,
                     'content' => $message->content,
                     'created_at' => $message->created_at,
                     'user' => [
-                        'id' => $user->id,
-                        'username' => $user->username
+                        'id' => $messageUser->id,
+                        'username' => $messageUser->username
                     ]
                 ];
             }
