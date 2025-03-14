@@ -2,7 +2,7 @@
     "name": "praveen/bunq-chat-app",
     "autoload": {
         "psr-4": {
-            "Praveen\\BunqChatApp\\": "src/"
+            "App\\": "src/"
         },
         "files": [
         "src/helpers.php"

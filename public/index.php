@@ -10,7 +10,7 @@ use App\Controllers\GroupController;
 use App\Controllers\MessageController;
 
 require __DIR__ . '/../vendor/autoload.php';
-require __DIR__ . '/../src/helpers.php';
+//require __DIR__ . '/../src/helpers.php';
 
 // Enable error display for debugging
 ini_set('display_errors', 1);
