@@ -6,13 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Group extends Model
 {
+    protected $table = 'groups';
     protected $fillable = ['name', 'created_by'];
+    
+    // Disable timestamps since our schema doesn't have updated_at
+    public $timestamps = false;
     
     // A group has many members (users)
     public function members()
     {
         return $this->belongsToMany(User::class, 'group_members')
-            ->withTimestamp('joined_at');
+            ->withPivot('joined_at');
     }
     
     // A group has many messages

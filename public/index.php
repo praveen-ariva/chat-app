@@ -10,6 +10,12 @@ use App\Controllers\GroupController;
 use App\Controllers\MessageController;
 
 require __DIR__ . '/../vendor/autoload.php';
+require __DIR__ . '/../src/helpers.php';
+
+// Enable error display for debugging
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
 
 // Create Container Builder
 $containerBuilder = new ContainerBuilder();
@@ -18,11 +24,9 @@ $containerBuilder = new ContainerBuilder();
 $containerBuilder->addDefinitions([
     Capsule::class => function() {
         $capsule = new Capsule;
-        $capsule->addConnection([
-            'driver' => 'sqlite',
-            'database' => __DIR__ . '/../database/chat.sqlite',
-            'prefix' => ''
-        ]);
+        $dbConfig = require __DIR__ . '/../config/database.php';
+        debug_log('Database config', $dbConfig);
+        $capsule->addConnection($dbConfig);
         $capsule->setAsGlobal();
         $capsule->bootEloquent();
         return $capsule;
@@ -41,6 +45,9 @@ $containerBuilder->addDefinitions([
 // Build PHP-DI Container
 $container = $containerBuilder->build();
 
+// Set up Eloquent
+$container->get(Capsule::class);
+
 // Create App
 AppFactory::setContainer($container);
 $app = AppFactory::create();
@@ -55,10 +62,8 @@ $app->get('/', function (Request $request, Response $response) {
     return $response->withHeader('Content-Type', 'application/json');
 });
 
-// User routes
-$app->post('/users', [UserController::class, 'create']);
-$app->get('/users/{id}', [UserController::class, 'get']);
-
+// Load all routes
+require __DIR__ . '/../src/routes.php';
 
 // Run the app
 $app->run();

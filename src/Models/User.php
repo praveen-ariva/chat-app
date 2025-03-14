@@ -6,13 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class User extends Model
 {
+    protected $table = 'users';
     protected $fillable = ['username'];
+    
+    // Disable timestamps since our schema doesn't have updated_at
+    public $timestamps = false;
     
     // A user can be a member of many groups
     public function groups()
     {
-        return $this->belongsToMany(Group::vendor/bin/phpunitclass, 'group_members')
-            ->withTimestamp('joined_at');
+        return $this->belongsToMany(Group::class, 'group_members')
+            ->withPivot('joined_at');
     }
     
     // A user can have many messages

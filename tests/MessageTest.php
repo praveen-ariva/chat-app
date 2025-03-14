@@ -14,7 +14,11 @@ class MessageTest extends TestCase
     {
         $this->client = new Client([
             'base_uri' => $this->baseUri,
-            'http_errors' => false
+            'http_errors' => false,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json'
+            ]
         ]);
         
         // Create a test user
@@ -23,6 +27,8 @@ class MessageTest extends TestCase
                 'username' => 'messagetest' . rand(1000, 9999)
             ]
         ]);
+        
+        $this->assertEquals(201, $userResponse->getStatusCode(), 'Failed to create test user: ' . $userResponse->getBody());
         
         $userBody = json_decode($userResponse->getBody(), true);
         $this->userId = $userBody['id'];
@@ -34,6 +40,8 @@ class MessageTest extends TestCase
                 'user_id' => $this->userId
             ]
         ]);
+        
+        $this->assertEquals(201, $groupResponse->getStatusCode(), 'Failed to create test group: ' . $groupResponse->getBody());
         
         $groupBody = json_decode($groupResponse->getBody(), true);
         $this->groupId = $groupBody['id'];
@@ -49,7 +57,10 @@ class MessageTest extends TestCase
             ]
         ]);
         
-        $this->assertEquals(201, $response->getStatusCode());
+        // Output response for debugging
+        echo "Send Message Response: " . $response->getBody() . "\n";
+        
+        $this->assertEquals(201, $response->getStatusCode(), 'Failed with status ' . $response->getStatusCode() . ': ' . $response->getBody());
         
         $body = json_decode($response->getBody(), true);
         $this->assertArrayHasKey('id', $body);
@@ -59,7 +70,7 @@ class MessageTest extends TestCase
     public function testGetGroupMessages()
     {
         // Send a message first
-        $this->client->post('/messages', [
+        $messageResponse = $this->client->post('/messages', [
             'json' => [
                 'user_id' => $this->userId,
                 'group_id' => $this->groupId,
@@ -67,10 +78,15 @@ class MessageTest extends TestCase
             ]
         ]);
         
+        $this->assertEquals(201, $messageResponse->getStatusCode(), 'Failed to create test message: ' . $messageResponse->getBody());
+        
         // Get messages
         $response = $this->client->get('/groups/' . $this->groupId . '/messages');
         
-        $this->assertEquals(200, $response->getStatusCode());
+        // Output response for debugging
+        echo "Get Messages Response: " . $response->getBody() . "\n";
+        
+        $this->assertEquals(200, $response->getStatusCode(), 'Failed with status ' . $response->getStatusCode() . ': ' . $response->getBody());
         
         $body = json_decode($response->getBody(), true);
         $this->assertArrayHasKey('messages', $body);

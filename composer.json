@@ -3,7 +3,10 @@
     "autoload": {
         "psr-4": {
             "Praveen\\BunqChatApp\\": "src/"
-        }
+        },
+        "files": [
+        "src/helpers.php"
+    ]
     },
     "require": {
         "slim/slim": "4.*",

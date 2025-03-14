@@ -13,7 +13,11 @@ class GroupTest extends TestCase
     {
         $this->client = new Client([
             'base_uri' => $this->baseUri,
-            'http_errors' => false
+            'http_errors' => false,
+            'headers' => [
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json'
+            ]
         ]);
         
         // Create a test user for our tests
@@ -22,6 +26,8 @@ class GroupTest extends TestCase
                 'username' => 'grouptest' . rand(1000, 9999)
             ]
         ]);
+        
+        $this->assertEquals(201, $response->getStatusCode(), 'Failed to create test user: ' . $response->getBody());
         
         $body = json_decode($response->getBody(), true);
         $this->userId = $body['id'];
@@ -38,7 +44,10 @@ class GroupTest extends TestCase
             ]
         ]);
         
-        $this->assertEquals(201, $response->getStatusCode());
+        // Output response for debugging
+        echo "Group Creation Response: " . $response->getBody() . "\n";
+        
+        $this->assertEquals(201, $response->getStatusCode(), 'Failed with status ' . $response->getStatusCode() . ': ' . $response->getBody());
         
         $body = json_decode($response->getBody(), true);
         $this->assertArrayHasKey('id', $body);
@@ -50,7 +59,7 @@ class GroupTest extends TestCase
     {
         $response = $this->client->get('/groups');
         
-        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals(200, $response->getStatusCode(), 'Failed with status ' . $response->getStatusCode() . ': ' . $response->getBody());
         
         $body = json_decode($response->getBody(), true);
         $this->assertArrayHasKey('groups', $body);
@@ -68,6 +77,10 @@ class GroupTest extends TestCase
         ]);
         
         $createBody = json_decode($createResponse->getBody(), true);
+        
+        // Check if the group was created successfully
+        $this->assertEquals(201, $createResponse->getStatusCode(), 'Failed to create test group: ' . $createResponse->getBody());
+        
         $groupId = $createBody['id'];
         
         // Create another user
@@ -87,6 +100,9 @@ class GroupTest extends TestCase
             ]
         ]);
         
-        $this->assertEquals(200, $response->getStatusCode());
+        // Output response for debugging
+        echo "Join Group Response: " . $response->getBody() . "\n";
+        
+        $this->assertEquals(200, $response->getStatusCode(), 'Failed with status ' . $response->getStatusCode() . ': ' . $response->getBody());
     }
 }
