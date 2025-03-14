@@ -22,4 +22,5 @@ $app->post('/groups/{id}/join', [GroupController::class, 'join']);
 
 // Messages routes
 $app->post('/messages', [MessageController::class, 'send']);
+// Updated to accept user_id as a query parameter for permission checking
 $app->get('/groups/{id}/messages', [MessageController::class, 'getByGroup']);

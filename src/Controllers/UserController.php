@@ -14,6 +14,24 @@ class UserController
     {
         $this->capsule = $capsule;
     }
+    
+    /**
+     * Generate a random GUID (UUID v4)
+     * @return string The generated GUID
+     */
+    private function generateGuid(): string
+    {
+        // Generate 16 random bytes
+        $data = random_bytes(16);
+        
+        // Set version to 0100 (UUID v4)
+        $data[6] = chr(ord($data[6]) & 0x0f | 0x40);
+        // Set bits 6-7 to 10 (variant 1)
+        $data[8] = chr(ord($data[8]) & 0x3f | 0x80);
+        
+        // Format the UUID as a string
+        return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
+    }
 
     public function create(Request $request, Response $response): Response
     {
@@ -36,13 +54,17 @@ class UserController
             return $response->withStatus(409)->withHeader('Content-Type', 'application/json');
         }
         
+        // Generate a GUID for the user
+        $userId = $this->generateGuid();
+        
         // Create user
-        $userId = $this->capsule->table('users')->insertGetId([
+        $this->capsule->table('users')->insert([
+            'id' => $userId,
             'username' => $data['username'],
             'created_at' => date('Y-m-d H:i:s')
         ]);
         
-        $user = $this->capsule->table('users')->find($userId);
+        $user = $this->capsule->table('users')->where('id', $userId)->first();
         
         $response->getBody()->write(json_encode([
             'id' => $user->id,
@@ -57,7 +79,7 @@ class UserController
     
     public function get(Request $request, Response $response, array $args): Response
     {
-        $user = $this->capsule->table('users')->find($args['id']);
+        $user = $this->capsule->table('users')->where('id', $args['id'])->first();
         
         if (!$user) {
             $response->getBody()->write(json_encode([
