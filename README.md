@@ -41,4 +41,4 @@ A simple chat application backend built with PHP and the Slim framework.
 
 5. Start the development server:
    ```
-   php -S localhost:8
+   php -S localhost:8080 -t public
