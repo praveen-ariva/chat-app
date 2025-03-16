@@ -6,10 +6,25 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Illuminate\Database\Capsule\Manager as Capsule;
 
+/**
+ * User Controller
+ * 
+ * Handles user-related operations such as creating and retrieving users
+ */
 class UserController
 {
+    /**
+     * Database connection
+     *
+     * @var Capsule
+     */
     protected $capsule;
 
+    /**
+     * Constructor
+     *
+     * @param Capsule $capsule Database connection manager
+     */
     public function __construct(Capsule $capsule)
     {
         $this->capsule = $capsule;
@@ -17,7 +32,8 @@ class UserController
     
     /**
      * Generate a random GUID (UUID v4)
-     * @return string The generated GUID
+     * 
+     * @return string The generated UUID
      */
     private function generateGuid(): string
     {
@@ -33,6 +49,13 @@ class UserController
         return vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(bin2hex($data), 4));
     }
 
+    /**
+     * Create a new user
+     * 
+     * @param Request $request The HTTP request
+     * @param Response $response The HTTP response
+     * @return Response The HTTP response with created user or error
+     */
     public function create(Request $request, Response $response): Response
     {
         $data = $request->getParsedBody();
@@ -77,6 +100,14 @@ class UserController
             ->withHeader('Content-Type', 'application/json');
     }
     
+    /**
+     * Get a user by ID
+     * 
+     * @param Request $request The HTTP request
+     * @param Response $response The HTTP response
+     * @param array $args The route parameters
+     * @return Response The HTTP response with user data or error
+     */
     public function get(Request $request, Response $response, array $args): Response
     {
         $user = $this->capsule->table('users')->where('id', $args['id'])->first();
