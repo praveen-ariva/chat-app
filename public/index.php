@@ -8,24 +8,57 @@ use Illuminate\Database\Capsule\Manager as Capsule;
 use App\Controllers\UserController;
 use App\Controllers\GroupController;
 use App\Controllers\MessageController;
+use App\Middleware\ContentTypeMiddleware;
+use App\Middleware\CorsMiddleware;
+use App\Middleware\AuthMiddleware;
+use App\Middleware\RateLimitMiddleware;
+use App\Utils\Logger;
+use App\Utils\LoggerFactory;
 
 require __DIR__ . '/../vendor/autoload.php';
-//require __DIR__ . '/../src/helpers.php';
 
-// Enable error display for debugging
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+// Load environment variables
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/..');
+$dotenv->safeLoad();
+
+// Set error display based on environment
+$appDebug = $_ENV['APP_DEBUG'] ?? false;
+ini_set('display_errors', $appDebug ? 1 : 0);
+ini_set('display_startup_errors', $appDebug ? 1 : 0);
+error_reporting($appDebug ? E_ALL : 0);
 
 // Create Container Builder
 $containerBuilder = new ContainerBuilder();
 
+// Create logger directory
+$logsDir = __DIR__ . '/../logs';
+if (!is_dir($logsDir)) {
+    mkdir($logsDir, 0755, true);
+}
+
+// Create storage directory for rate limiting
+$storageDir = __DIR__ . '/../storage/rate_limits';
+if (!is_dir($storageDir)) {
+    mkdir($storageDir, 0755, true);
+}
+
 // Add container definitions
 $containerBuilder->addDefinitions([
+    Logger::class => function() {
+        $logger = new Logger();
+        LoggerFactory::setLogger($logger);
+        return $logger;
+    },
     Capsule::class => function() {
         $capsule = new Capsule;
-        $dbConfig = require __DIR__ . '/../config/database.php';
-        debug_log('Database config', $dbConfig);
+        
+        // Get database config from environment variables
+        $dbConfig = [
+            'driver' => $_ENV['DB_DRIVER'] ?? 'sqlite',
+            'database' => __DIR__ . '/../' . ($_ENV['DB_DATABASE'] ?? 'database/chat.sqlite'),
+            'prefix' => $_ENV['DB_PREFIX'] ?? '',
+        ];
+        
         $capsule->addConnection($dbConfig);
         $capsule->setAsGlobal();
         $capsule->bootEloquent();
@@ -39,6 +72,12 @@ $containerBuilder->addDefinitions([
     },
     MessageController::class => function($container) {
         return new MessageController($container->get(Capsule::class));
+    },
+    AuthMiddleware::class => function($container) {
+        return new AuthMiddleware($container->get(Capsule::class));
+    },
+    RateLimitMiddleware::class => function() {
+        return new RateLimitMiddleware();
     }
 ]);
 
@@ -52,14 +91,20 @@ $container->get(Capsule::class);
 AppFactory::setContainer($container);
 $app = AppFactory::create();
 
-// Add middleware
+// Add global middlewares
+$app->addMiddleware(new CorsMiddleware());
+$app->addMiddleware(new ContentTypeMiddleware());
+$app->addMiddleware($container->get(RateLimitMiddleware::class));
 $app->addErrorMiddleware(true, true, true);
 $app->addBodyParsingMiddleware();
 
 // Define routes
 $app->get('/', function (Request $request, Response $response) {
-    $response->getBody()->write(json_encode(['message' => 'Chat API is running']));
-    return $response->withHeader('Content-Type', 'application/json');
+    $response->getBody()->write(json_encode([
+        'message' => 'Chat API is running',
+        'version' => '1.0.0'
+    ]));
+    return $response;
 });
 
 // Load all routes
