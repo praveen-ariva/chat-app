@@ -1,8 +1,57 @@
+# Vendor directory
 /vendor/
+
+# Database files
 /database/*.sqlite
 /database/*.sqlite-journal
+
+# Environment files
 .env
+.env.backup
+.env.*
+!.env.example
+
+# IDE directories
 .idea/
 .vscode/
+*.sublime-project
+*.sublime-workspace
+nbproject/
+
+# Log files
+/logs/
 *.log
+
+# System files
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Temporary files
+*.swp
+*.swo
+*.tmp
+*.temp
+*~
+
+# Storage directory for rate limiting
+/storage/rate_limits/
+
+# Backup files
+*.bak
+*.old
+*.backup
+
+# Test files
+test-*.php
+test_*.php
+!tests/
+
+# Local development files
+/local/
+/temp/
+/tmp/
+
+# PHP files
+php_errors.log
