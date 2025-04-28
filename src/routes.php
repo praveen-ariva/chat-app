@@ -30,3 +30,10 @@ $app->group('/groups', function (RouteCollectorProxy $group) {
 
 // Messages routes
 $app->post('/messages', [MessageController::class, 'send'])->add($authMiddleware);
+
+// Swagger UI route
+$app->get('/api-docs', function ($request, $response) {
+    // Redirect to the static HTML page
+    return $response->withHeader('Location', '/api-docs/index.html')
+                    ->withStatus(302);
+});
